@@ -1,6 +1,6 @@
-cap program drop sivdid
-program define sivdid, eclass 
-syntax varlist [if] [in] [aweight pweight fweight iweight] [,   Y(string) D(string) Z(string) first(real 0.4)   periods(real 1) arg_cohort_treatment_date(string) arg_time(string) expo(string) controls(varlist) Keep(real 5)  ]        
+cap program drop miyaji
+program define miyaji, eclass 
+syntax varlist [if] [in] [aweight pweight fweight iweight] [,   Y(string) D(string) Z(string) first(real 1)   periods(real 1) arg_cohort_treatment_date(string) arg_time(string) expo(string) controls(varlist) Keep(real 5)  ]        
 /*         PARSE TEXT       */
 marksample _sample
 	set buildfvinfo on
@@ -39,7 +39,7 @@ qui: gen `Variable_G' = (`arg_cohort_treatment_date'  == (`t_group'))	if `_sampl
 qui: gen `Variable_T' = (`arg_time' == (`t_group' + `t_ell')) if `_sample'
     * check first-stage : record error if first-stage (t< X) is too weak or not enough variation for fixed effects
 cap:  reg  `d' `z' `Variable_G'  `Variable_T' `controls'  if ( (`arg_cohort_treatment_date'  == (`t_group')) | (`arg_cohort_treatment_date' == 0)) & (`arg_time' == (`t_group' + `t_ell')   | (`arg_time'== `t_group' - 1)) & `_sample'  
-cap: scalar Ferror_ivreg2 = (abs(e(b)[1,1]/sqrt(e(V)[1,1])) < `first') | (abs(e(b)[1,2])<1e-8)  | (abs(e(b)[1,3])<1e-8) | (abs(e(b)[1,4])<1e-8) 
+cap: scalar Ferror_ivreg2 = (e(F) < `first') | (abs(e(b)[1,2])<1e-8)  | (abs(e(b)[1,3])<1e-8) | (abs(e(b)[1,4])<1e-8) 
 scalar Ferror_immediate = _rc 		
 cap: scalar Ferror_ivreg = (abs(e(b)[1,1]) == .) | (abs(e(b)[1,2])==.)  | (abs(e(b)[1,3])==.) | (abs(e(b)[1,4])==.)  
     * select estimation method (linear or ppml)					
