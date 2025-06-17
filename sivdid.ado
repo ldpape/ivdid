@@ -1,5 +1,5 @@
-cap program drop miyaji
-program define miyaji, eclass 
+cap program drop sivdid
+program define sivdid, eclass 
 syntax varlist [if] [in] [aweight pweight fweight iweight] [,   Y(string) D(string) Z(string) first(real 1)   periods(real 1) arg_cohort_treatment_date(string) arg_time(string) expo(string) controls(varlist) Keep(real 5)  ]        
 /*         PARSE TEXT       */
 marksample _sample
