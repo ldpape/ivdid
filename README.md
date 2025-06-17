@@ -1,3 +1,3 @@
-cap ado uninstall miyaji
+cap ado uninstall sivdid
 
-net install miyaji, from("https://raw.githubusercontent.com/ldpape/sivdid/main/")
+net install sivdid, from("https://raw.githubusercontent.com/ldpape/sivdid/main/")
