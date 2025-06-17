@@ -122,13 +122,9 @@ scalar total_weight =  total_weight + total_weight_iv_`cow'_`t_ell' // used to c
 /*   REPORT AVERAGE TREATMENT EFFECTS      */
 ** report to eclass 
 ereturn clear 
-qui: sum `_sample' if `_sample'==1
-ereturn scalar Nobs = r(N)
-cap drop sample 
-cap: gen sample = `_sample' // to use instead of e(sample)
-qui: sum `copy' if `copy'
+qui: sum `_sample' if `_sample'
 scalar N = r(N)
-ereturn post, esample(`copy') obs(`=N') depname(`y')
+ereturn post, esample(`_sample') obs(`=N') depname(`y')
 ** report in console 
 di in red "********************************************************************"
 di in red "*                 SUMMARY OF ESTIMATED EFFECTS                     *"
@@ -167,7 +163,4 @@ ereturn scalar beta_AVG = beta_AVG
 ereturn scalar total_weight = total_weight
 ereturn scalar beta_UWAVG = sum_/count_
 ereturn scalar error = beta_error
-qui: sum `_sample' if `_sample'
-ereturn scalar obs_actual = r(N)
-di "Number of Observations (identified sample): " r(N)
 end
