@@ -1,6 +1,6 @@
 v 1
 d Louis Pape
-p miyahi - Run IVDID
+p sivdid - Run IVDID
 
 * l word-to-show path-or-url [description]
 * t: Directories within site:
