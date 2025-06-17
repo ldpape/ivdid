@@ -1,6 +1,6 @@
 cap program drop sivdid
 program define sivdid, eclass 
-syntax varlist [if] [in] [aweight pweight fweight iweight] [,   Y(string) D(string) Z(string) first(real 1)   periods(real 1) arg_cohort_treatment_date(string) arg_time(string) expo(string) controls(varlist) Keep(real 5)  ]        
+syntax varlist [if] [in] [aweight pweight fweight iweight] [,   Y(string) D(string) Z(string) first(real 1)   periods(real 1) arg_cohort_treatment_date(string) arg_time(string) exponential controls(varlist) Keep(real 5)  ]        
 /*         PARSE TEXT       */
 marksample _sample
 	set buildfvinfo on
@@ -39,11 +39,11 @@ qui: gen `Variable_G' = (`arg_cohort_treatment_date'  == (`t_group'))	if `_sampl
 qui: gen `Variable_T' = (`arg_time' == (`t_group' + `t_ell')) if `_sample'
     * check first-stage : record error if first-stage (t< X) is too weak or not enough variation for fixed effects
 cap:  reg  `d' `z' `Variable_G'  `Variable_T' `controls'  if ( (`arg_cohort_treatment_date'  == (`t_group')) | (`arg_cohort_treatment_date' == 0)) & (`arg_time' == (`t_group' + `t_ell')   | (`arg_time'== `t_group' - 1)) & `_sample'  
-cap: scalar Ferror_ivreg2 = (e(F) < `first') | (abs(e(b)[1,2])<1e-8)  | (abs(e(b)[1,3])<1e-8) | (abs(e(b)[1,4])<1e-8) 
+cap: scalar Ferror_ivreg2 = (e(F) < `first') | (abs(e(b)[1,1])<1e-8)  | (abs(e(b)[1,2])<1e-8)  | (abs(e(b)[1,3])<1e-8) | (abs(e(b)[1,4])<1e-8) 
 scalar Ferror_immediate = _rc 		
 cap: scalar Ferror_ivreg = (abs(e(b)[1,1]) == .) | (abs(e(b)[1,2])==.)  | (abs(e(b)[1,3])==.) | (abs(e(b)[1,4])==.)  
     * select estimation method (linear or ppml)					
-if "`expo'" != "exponential" {
+if "`exponential'" == "" {
 		* LINEAR MODEL (OLS/IV)
 cap:    ivreg2 `y' ( `d' = `z') `Variable_G'  `Variable_T' `controls'  if ( (`arg_cohort_treatment_date'  == (`t_group')) | (`arg_cohort_treatment_date' == 0)) & (`arg_time' == (`t_group' + `t_ell')   | (`arg_time'== `t_group' - 1)) & `_sample'  
 scalar error_immediate = _rc 		
@@ -51,13 +51,14 @@ scalar error_immediate = _rc
 					else {
 		* IV POISSON OPTION
 cap:  ivreg2 `lnY' ( `d' = `z') `Variable_G'  `Variable_T' `controls'  if ( (`arg_cohort_treatment_date'  == (`t_group')) | (`arg_cohort_treatment_date' == 0)) & (`arg_time' == (`t_group' + `t_ell')   | (`arg_time'== `t_group' - 1)) & `_sample'
-cap:  ivpoisson  gmm `y' `Variable_G' `Variable_T' `controls' (`d'= `z') if ( (`arg_cohort_treatment_date'  == (`t_group')) | (`arg_cohort_treatment_date' == 0)) & (`arg_time' == (`t_group' + `t_ell')   | (`arg_time'== `t_group' - 1)) & `_sample' , from(e(b))  multiplicative  technique(nr)  onestep  conv_maxiter(300) 
+// cap: noisily:  ivpoisson  gmm `y' `Variable_G' `Variable_T' `controls' (`d'= `z') if ( (`arg_cohort_treatment_date'  == (`t_group')) | (`arg_cohort_treatment_date' == 0)) & (`arg_time' == (`t_group' + `t_ell')   | (`arg_time'== `t_group' - 1)) & `_sample' , from(e(b))  multiplicative  technique(nr)  onestep  conv_maxiter(20) 
+ cap:  ivpois `y' `Variable_G'  `Variable_T' `controls' if ( (`arg_cohort_treatment_date'  == (`t_group')) | (`arg_cohort_treatment_date' == 0)) & (`arg_time' == (`t_group' + `t_ell')   | (`arg_time'== `t_group' - 1)) & `_sample', endog(`d') exog(`z') from(e(b))
  scalar error_immediate = _rc 
 						 }		
      * extract treatment effect and potential errors in second stage 
  cap: scalar beta_iv_`cow'_`t_ell' = _b[`d']
- cap: scalar error_ivreg2 = (abs(e(b)[1,1]) < 1e-8) | (abs(e(b)[1,2])<1e-8)  | (abs(e(b)[1,3])<1e-8) | (abs(e(b)[1,4])<1e-8) 
- cap: scalar error_ivreg = (abs(e(b)[1,1]) == .) | (abs(e(b)[1,2])==.)  | (abs(e(b)[1,3])==.) | (abs(e(b)[1,4])==.)  
+//  cap: scalar error_ivreg2 = (abs(e(b)[1,1]) < 1e-8) | (abs(e(b)[1,2])<1e-8)  | (abs(e(b)[1,3])<1e-8) | (abs(e(b)[1,4])<1e-8) 
+//  cap: scalar error_ivreg = (abs(e(b)[1,1]) == .) | (abs(e(b)[1,2])==.)  | (abs(e(b)[1,3])==.) | (abs(e(b)[1,4])==.)  
 	 * remove corrupted estimates and associated sample 
  if error_ivreg2 == 1 | error_ivreg == 1 | error_immediate>0 |  Ferror_ivreg2 == 1 | Ferror_ivreg == 1 | Ferror_immediate>0 {  
 //  	di "Could not estimate the folowing group-time treament effect:"
@@ -123,8 +124,12 @@ scalar total_weight =  total_weight + total_weight_iv_`cow'_`t_ell' // used to c
 ** report to eclass 
 ereturn clear 
 qui: sum `_sample' if `_sample'
+scalar obs_actual = r(N)
+qui: sum `copy' if `copy'
 scalar N = r(N)
-ereturn post, esample(`_sample') obs(`=N') depname(`y')
+cap : drop sample 
+cap : gen sample = `_sample'
+ereturn post, esample(`copy') obs(`=N') depname(`y')
 ** report in console 
 di in red "********************************************************************"
 di in red "*                 SUMMARY OF ESTIMATED EFFECTS                     *"
@@ -163,4 +168,6 @@ ereturn scalar beta_AVG = beta_AVG
 ereturn scalar total_weight = total_weight
 ereturn scalar beta_UWAVG = sum_/count_
 ereturn scalar error = beta_error
+ereturn scalar N_obs = obs_actual
+di "Number of Observations (identified sample): " obs_actual
 end
