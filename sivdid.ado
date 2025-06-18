@@ -1,6 +1,6 @@
 cap program drop sivdid
 program define sivdid, eclass 
-syntax varlist [if] [in] [aweight pweight fweight iweight] [,   Y(string) D(string) Z(string) first(real 1)   periods(real 1) arg_cohort_treatment_date(string) arg_time(string) exponential controls(varlist) Keep(real 5)  ]        
+syntax  [if] [in] [,   Y(string) D(string) Z(string) first(real 0)  median  periods(real 1) arg_cohort_treatment_date(string) arg_time(string) exponential controls(varlist) Keep(real 1)  ]        
 /*         PARSE TEXT       */
 marksample _sample
 	set buildfvinfo on
@@ -16,6 +16,8 @@ qui: bys `arg_cohort_treatment_date' `arg_time'  : gen `total_dates' = (_n==`kee
 qui: bys `arg_cohort_treatment_date'  : egen `sum_dates' = sum(`total_dates')   if `_sample' == 1 & (`arg_cohort_treatment_date' > 0) // check if condition validates across all dates 
 qui : replace `_sample' = 0  if `sum_dates'< (1+`periods')  & `_sample'==1 & (`arg_cohort_treatment_date' > 0) // keep only valid cohorts 
 /*   BEGIN ESTIMATION      */
+tempvar beta_hat
+cap: gen `beta_hat' = .
 local cow = 0
 qui: levelsof `arg_cohort_treatment_date' if `arg_cohort_treatment_date'>0 & `_sample'==1 // loop through cohorts and dates
 local cohort_groups `r(levels)'
@@ -24,7 +26,7 @@ foreach t_group in `cohort_groups' {
 local cow = `cow' + 1
 		forvalues t_ell = 0(1)`periods' {
 	* create an empty treatment effect scalar 
-scalar beta_iv_`cow'_`t_ell' = .
+// scalar beta_iv_`cow'_`t_ell' = .
 	* scalars to record potential identification failure 
 scalar error_ivreg2 = 0
 scalar error_ivreg = 0
@@ -56,70 +58,20 @@ cap:  ivreg2 `lnY' ( `d' = `z') `Variable_G'  `Variable_T' `controls'  if ( (`ar
  scalar error_immediate = _rc 
 						 }		
      * extract treatment effect and potential errors in second stage 
- cap: scalar beta_iv_`cow'_`t_ell' = _b[`d']
-//  cap: scalar error_ivreg2 = (abs(e(b)[1,1]) < 1e-8) | (abs(e(b)[1,2])<1e-8)  | (abs(e(b)[1,3])<1e-8) | (abs(e(b)[1,4])<1e-8) 
-//  cap: scalar error_ivreg = (abs(e(b)[1,1]) == .) | (abs(e(b)[1,2])==.)  | (abs(e(b)[1,3])==.) | (abs(e(b)[1,4])==.)  
+//  cap: scalar beta_iv_`cow'_`t_ell' = _b[`d']  
+ cap: replace `beta_hat' = _b[`d'] if ( (`arg_cohort_treatment_date'  == (`t_group')) ) & (`arg_time' == (`t_group' + `t_ell')) & `_sample'
+ cap: scalar error_ivreg2 = (abs(e(b)[1,1]) < 1e-8) | (abs(e(b)[1,2])<1e-8)  | (abs(e(b)[1,3])<1e-8) | (abs(e(b)[1,4])<1e-8) 
+ cap: scalar error_ivreg = (abs(e(b)[1,1]) == .) | (abs(e(b)[1,2])==.)  | (abs(e(b)[1,3])==.) | (abs(e(b)[1,4])==.)  
 	 * remove corrupted estimates and associated sample 
  if error_ivreg2 == 1 | error_ivreg == 1 | error_immediate>0 |  Ferror_ivreg2 == 1 | Ferror_ivreg == 1 | Ferror_immediate>0 {  
 //  	di "Could not estimate the folowing group-time treament effect:"
 //  	di "Group-Time: " `cow' "-" `t_ell'
-	scalar beta_iv_`cow'_`t_ell' = 0
+// 	scalar beta_iv_`cow'_`t_ell' = 0
+    cap: replace `beta_hat' = . if ( (`arg_cohort_treatment_date'  == (`t_group')) ) & (`arg_time' == (`t_group' + `t_ell')) & `_sample'
 	qui: replace `_sample' = 0 if (`arg_cohort_treatment_date' == `t_group') & (`arg_time' == (`t_group' + `t_ell')) & `_sample'==1
 			}
  				}
-					}	 
-/*   CALCULATE WEIGHTS BY TREATMENT EFFECTS      */
-local cow = 0
-foreach t_group in `cohort_groups' {
-local cow = `cow' + 1
-		forvalues t_ell = 0(1)`periods' {
-* calculate number of observation treated for date and cohort 
-qui: sum `d' if (`arg_cohort_treatment_date' == (`t_group')) & (`arg_time' == (`t_group' + `t_ell')  )  & `_sample' == 1
-qui: scalar share = r(N)
-* calculate number of observation for date
-qui: sum `d' if (`arg_cohort_treatment_date' != 0) & (`arg_time' == (`arg_cohort_treatment_date' + `t_ell' ))   & `_sample' == 1
-qui: scalar total = r(N) 
-* calculate weight by time : weight_iv_cohort_time
-if total == 0 { // no identified 
-qui: scalar weight_iv_`cow'_`t_ell' = 0
-}
-else {
-qui: scalar weight_iv_`cow'_`t_ell' = share/total  
-}
-* calculate weight for overall sample  : total_weight_iv_cohort_time
-qui: sum `arg_cohort_treatment_date' if `arg_cohort_treatment_date' != 0 & (`arg_time' >= `arg_cohort_treatment_date') & (`arg_time'<= (`arg_cohort_treatment_date' + `periods'))  & `_sample' == 1
-qui: scalar total_sample = r(N) 
-if total == 0 {
-qui: scalar total_weight_iv_`cow'_`t_ell' =  0
-}
-else {
-qui: scalar total_weight_iv_`cow'_`t_ell' =  share/total_sample 
-}
- 				}
-					}		
-/*   CALCULATE AVERAGE TREATMENT EFFECTS      */
-scalar beta_AVG = 0 // preparation scalars
-scalar total_weight = 0
-scalar count_ = 0
-scalar sum_ = 0
-* iterate across time and groups 
-		forvalues t_ell = 0(1)`periods' {
-scalar	beta_`t_ell' = 0
-scalar  weight_`t_ell' = 0
-local   cow = 0
-				foreach t_group in `cohort_groups' {
-local cow = `cow' + 1
-scalar beta_`t_ell' = beta_`t_ell' + beta_iv_`cow'_`t_ell'*weight_iv_`cow'_`t_ell' // add weights 
-scalar beta_AVG = beta_AVG +  beta_iv_`cow'_`t_ell'*total_weight_iv_`cow'_`t_ell' // overall treatment effect
-scalar weight_`t_ell' =  weight_`t_ell' + weight_iv_`cow'_`t_ell' // used to check correct implemenation 
-scalar total_weight =  total_weight + total_weight_iv_`cow'_`t_ell' // used to check correct implemenation 
- ** calculate weights by variance of period  
-  if beta_iv_`cow'_`t_ell' != 0{ 
-  	 scalar count_ = count_ + 1 
- 	 scalar sum_ = sum_ + beta_iv_`cow'_`t_ell'
-  }
-		}
-			}
+					}	 			
 /*   REPORT AVERAGE TREATMENT EFFECTS      */
 ** report to eclass 
 ereturn clear 
@@ -139,34 +91,46 @@ if "`exponential'" == "exponential" {
 di in red "-- Estimates based on endogenous count model (ivpois) -- "
 }
 di in red "Dynamic Average Effects :"
-	scalar beta_error = 0
+scalar beta_error = 0
+* report per period effect
 forvalues t_ell = 0(1)`periods' {
-if beta_`t_ell' == 0 { // return error if no beta_ell
-di "BETA_`t_ell' is not identified" 
-	scalar beta_`t_ell' = . // for jackknife/bootstrap, report identification failure
-//	scalar beta_error = 1
+qui: sum `beta_hat' if `_sample' & (`arg_cohort_treatment_date' != 0) & (`arg_time' == (`arg_cohort_treatment_date' + `t_ell' )) , de 
+ if (r(N) > 0) {
+	di "Mean BETA_`t_ell' = " r(mean)
+	ereturn scalar beta_mean_`t_ell' = r(mean)
+	if "`median'" == "median"{
+	di "Median BETA_`t_ell' = " r(p50)
+	ereturn scalar beta_median_`t_ell' = r(p50)
+			}
+			  }
+	else {
+		di "BETA_`t_ell' is not identified"
+	ereturn scalar beta_mean`t_ell' = .	
+		if "`median'" == "median"{
+	ereturn scalar beta_median_`t_ell' = .
+			}
 	}
-	else {		
-	di "BETA_`t_ell' = " beta_`t_ell'
-	}
-ereturn scalar beta_`t_ell' = beta_`t_ell'
-ereturn scalar weight_`t_ell' = weight_`t_ell'
 }
-if beta_AVG == 0 { // return error or parameters 
-	di "BETA_AVG is not identified"
-	scalar beta_AVG = .
+* report overall effect 
+qui: sum `beta_hat' if `_sample' & (`arg_cohort_treatment_date' != 0) , de
+ if (r(N) > 0) {
+	di "Mean BETA_mean = " r(mean)
+	ereturn scalar beta_overall_mean = r(mean)
+	if "`median'" == "median"{
+	di "Median BETA_median = " r(p50)
+	ereturn scalar beta_overall_median = r(p50)
+			}
+			  }
+	else {
+		di "BETA_mean is not identified"
+	ereturn scalar beta_overall_mean = .	
+		if "`median'" == "median"{
+		di "Beta_median is not identified"
+	ereturn scalar beta_overall_median = .
+			}
 	scalar beta_error = 1
-}
-else {
-di in red "Average Effect per Period : "
-	di "BETA_AVG =" beta_AVG	
-di in red "Unweighted Average Effect per Period : "
-	di "BETA_UWAVG =" sum_/count_	
-}
+	}
 * ereturn (eclass) estimates as scalars (to do: matrix form)
-ereturn scalar beta_AVG = beta_AVG
-ereturn scalar total_weight = total_weight
-ereturn scalar beta_UWAVG = sum_/count_
 ereturn scalar error = beta_error
 ereturn scalar N_obs = obs_actual
 di "Number of Observations (identified sample): " obs_actual
