@@ -1,6 +1,6 @@
 cap program drop sivdid
 program define sivdid, eclass 
-syntax  [if] [in] [,   Y(string) D(string) Z(string) first(real 0)  median  periods(real 1) arg_cohort_treatment_date(string) arg_time(string) exponential controls(varlist) Keep(real 1)  ]        
+syntax  [if] [in] [,   Y(string) D(string) Z(string) first(real 0)  median  periods(real 1) arg_cohort_treatment_date(string) arg_time(string) exponential controls(varlist) Keep(real 4)  ]        
 /*         PARSE TEXT       */
 marksample _sample
 	set buildfvinfo on
@@ -11,10 +11,13 @@ tempvar lnY
 qui: gen `lnY' = asinh(`y') // used for exponential option 
 	* keep sample with dates corresponding to request
 qui: replace `_sample' = 0 if ((`arg_time' > (`arg_cohort_treatment_date' + `periods')) | (`arg_time' < (`arg_cohort_treatment_date' - 1))) & (`arg_cohort_treatment_date' > 0)
-tempvar total_dates  sum_dates 
+tempvar total_dates  sum_dates nb_dates sum_nb_dates
 qui: bys `arg_cohort_treatment_date' `arg_time'  : gen `total_dates' = (_n==`keep') if `_sample' == 1 & (`arg_cohort_treatment_date' > 0) // at least ten observations per cohort and date 
 qui: bys `arg_cohort_treatment_date'  : egen `sum_dates' = sum(`total_dates')   if `_sample' == 1 & (`arg_cohort_treatment_date' > 0) // check if condition validates across all dates 
-qui : replace `_sample' = 0  if `sum_dates'< (1+`periods')  & `_sample'==1 & (`arg_cohort_treatment_date' > 0) // keep only valid cohorts 
+
+qui: bys `arg_cohort_treatment_date' `arg_time'  : gen `nb_dates' = (_n==1) if `_sample' == 1 & (`arg_cohort_treatment_date' > 0) // count number of dates
+qui: bys `arg_cohort_treatment_date'  : egen `sum_nb_dates' = sum(`nb_dates')   if `_sample' == 1 & (`arg_cohort_treatment_date' > 0) // check if condition validates across all dates 
+qui : replace `_sample' = 0  if (`sum_dates'< `sum_nb_dates')  & `_sample'==1 & (`arg_cohort_treatment_date' > 0) // keep only valid cohorts 
 /*   BEGIN ESTIMATION      */
 tempvar beta_hat
 cap: gen `beta_hat' = .
