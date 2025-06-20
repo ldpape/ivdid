@@ -1,6 +1,6 @@
 cap program drop sivdid
 program define sivdid, eclass 
-syntax  [if] [in] [,   Y(string) D(string) Z(string) first(real 0)  median  periods(real 1) arg_cohort_treatment_date(string) arg_time(string) exponential controls(varlist) Keep(real 4)  ]        
+syntax  [if] [in] [,   Y(string) D(string) Z(string) first(real 0)  median  periods(real 1) arg_cohort_treatment_date(string) arg_time(string) exponential controls(varlist) keep(real 5)  ]        
 /*         PARSE TEXT       */
 marksample _sample
 	set buildfvinfo on
@@ -12,12 +12,12 @@ qui: gen `lnY' = asinh(`y') // used for exponential option
 	* keep sample with dates corresponding to request
 qui: replace `_sample' = 0 if ((`arg_time' > (`arg_cohort_treatment_date' + `periods')) | (`arg_time' < (`arg_cohort_treatment_date' - 1))) & (`arg_cohort_treatment_date' > 0)
 tempvar total_dates  sum_dates nb_dates sum_nb_dates
-qui: bys `arg_cohort_treatment_date' `arg_time'  : gen `total_dates' = (_n==`keep') if `_sample' == 1 & (`arg_cohort_treatment_date' > 0) // at least ten observations per cohort and date 
+qui: bys `arg_cohort_treatment_date' `arg_time'  : gen `total_dates' = (_n==`keep') if `_sample' == 1 // & (`arg_cohort_treatment_date' > 0) // at least ten observations per cohort and date 
 //qui: replace `_sample' = 0 if `total_dates' == 0 & `_sample' == 1 & (`arg_cohort_treatment_date' > 0) // at least ten observations per cohort and date 
- qui: bys `arg_cohort_treatment_date'  : egen `sum_dates' = sum(`total_dates')   if `_sample' == 1 & (`arg_cohort_treatment_date' > 0) // check if condition validates across all dates 
- qui: bys `arg_cohort_treatment_date' `arg_time'  : gen `nb_dates' = (_n==1) if `_sample' == 1 & (`arg_cohort_treatment_date' > 0) // count number of dates
- qui: bys `arg_cohort_treatment_date'  : egen `sum_nb_dates' = sum(`nb_dates')   if `_sample' == 1 & (`arg_cohort_treatment_date' > 0) // check if condition validates across all dates 
- qui : replace `_sample' = 0  if (`sum_dates'< `sum_nb_dates')  & `_sample'==1 & (`arg_cohort_treatment_date' > 0) // keep only valid cohorts 
+ qui: bys `arg_cohort_treatment_date'  : egen `sum_dates' = sum(`total_dates')   if `_sample' == 1 //& (`arg_cohort_treatment_date' > 0) // check if condition validates across all dates 
+ qui: bys `arg_cohort_treatment_date' `arg_time'  : gen `nb_dates' = (_n==1) if `_sample' == 1 //& (`arg_cohort_treatment_date' > 0) // count number of dates
+ qui: bys `arg_cohort_treatment_date'  : egen `sum_nb_dates' = sum(`nb_dates')   if `_sample' == 1 //& (`arg_cohort_treatment_date' > 0) // check if condition validates across all dates 
+ qui : replace `_sample' = 0  if (`sum_dates'< `sum_nb_dates')  & `_sample'==1 //& (`arg_cohort_treatment_date' > 0) // keep only valid cohorts 
 /*   BEGIN ESTIMATION      */
 tempvar beta_hat
 cap: gen `beta_hat' = .
@@ -86,55 +86,67 @@ cap : drop sample
 cap : gen sample = `_sample'
 ereturn post, esample(`copy') obs(`=N') depname(`y')
 ** report in console 
-di in red "********************************************************************"
-di in red "*                 SUMMARY OF ESTIMATED EFFECTS                     *"
-di in red "********************************************************************"
+di  "********************************************************************"
+di  "*                 SUMMARY OF ESTIMATED EFFECTS                     *"
+di  "********************************************************************"
 
 if "`exponential'" == "exponential" { 
-di in red "-- Estimates based on endogenous count model (ivpois) -- "
+di "-- Estimates based on endogenous count model (ivpois) -- "
 }
-di in red "Dynamic Average Effects :"
+di "Dynamic Average Effects :"
 scalar beta_error = 0
 * report per period effect
 forvalues t_ell = 0(1)`periods' {
 qui: sum `beta_hat' if `_sample' & (`arg_cohort_treatment_date' != 0) & (`arg_time' == (`arg_cohort_treatment_date' + `t_ell' )) , de 
  if (r(N) > 0) {
-	di "Mean BETA_`t_ell' = " r(mean)
-	ereturn scalar beta_mean_`t_ell' = r(mean)
 	if "`median'" == "median"{
-	di "Median BETA_`t_ell' = " r(p50)
+	di "Median Treatment Effect for Period `t_ell' : " r(p50)
 	ereturn scalar beta_median_`t_ell' = r(p50)
 			}
-			  }
+	else {
+	di "Mean Treatment Effect for Period : " r(mean)
+	}
+	ereturn scalar beta_mean_`t_ell' = r(mean)	
+	}
 	else {
 		di "BETA_`t_ell' is not identified"
-	ereturn scalar beta_mean`t_ell' = .	
 		if "`median'" == "median"{
 	ereturn scalar beta_median_`t_ell' = .
 			}
+		else{
+	di "BETA_`t_ell' is not identified"	
+		}
+	ereturn scalar beta_mean`t_ell' = .	
 	}
 }
 * report overall effect 
 qui: sum `beta_hat' if `_sample' & (`arg_cohort_treatment_date' != 0) , de
  if (r(N) > 0) {
-	di "Mean BETA_mean = " r(mean)
-	ereturn scalar beta_overall_mean = r(mean)
 	if "`median'" == "median"{
-	di "Median BETA_median = " r(p50)
+	di "Overall Median Treatment Effect : " r(p50)
 	ereturn scalar beta_overall_median = r(p50)
 			}
-			  }
 	else {
-		di "BETA_mean is not identified"
-	ereturn scalar beta_overall_mean = .	
+	di "Overall Mean Treatment Effect : " r(mean)
+	}
+	ereturn scalar beta_overall_mean = r(mean)		
+			  }
+	else {	
 		if "`median'" == "median"{
 		di "Beta_median is not identified"
 	ereturn scalar beta_overall_median = .
 			}
+		else{
+		di "BETA_mean is not identified"
+		}
+	ereturn scalar beta_overall_mean = .
 	scalar beta_error = 1
 	}
 * ereturn (eclass) estimates as scalars (to do: matrix form)
 ereturn scalar error = beta_error
 ereturn scalar N_obs = obs_actual
-di "Number of Observations (identified sample): " obs_actual
+ereturn scalar keep = `keep'
+ereturn scalar first = `first'
+ereturn scalar periods = `periods'
+di "Number of Observations: " obs_actual
 end
