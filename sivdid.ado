@@ -13,11 +13,11 @@ qui: gen `lnY' = asinh(`y') // used for exponential option
 qui: replace `_sample' = 0 if ((`arg_time' > (`arg_cohort_treatment_date' + `periods')) | (`arg_time' < (`arg_cohort_treatment_date' - 1))) & (`arg_cohort_treatment_date' > 0)
 tempvar total_dates  sum_dates nb_dates sum_nb_dates
 qui: bys `arg_cohort_treatment_date' `arg_time'  : gen `total_dates' = (_n==`keep') if `_sample' == 1 & (`arg_cohort_treatment_date' > 0) // at least ten observations per cohort and date 
-qui: bys `arg_cohort_treatment_date'  : egen `sum_dates' = sum(`total_dates')   if `_sample' == 1 & (`arg_cohort_treatment_date' > 0) // check if condition validates across all dates 
-
-qui: bys `arg_cohort_treatment_date' `arg_time'  : gen `nb_dates' = (_n==1) if `_sample' == 1 & (`arg_cohort_treatment_date' > 0) // count number of dates
-qui: bys `arg_cohort_treatment_date'  : egen `sum_nb_dates' = sum(`nb_dates')   if `_sample' == 1 & (`arg_cohort_treatment_date' > 0) // check if condition validates across all dates 
-qui : replace `_sample' = 0  if (`sum_dates'< `sum_nb_dates')  & `_sample'==1 & (`arg_cohort_treatment_date' > 0) // keep only valid cohorts 
+//qui: replace `_sample' = 0 if `total_dates' == 0 & `_sample' == 1 & (`arg_cohort_treatment_date' > 0) // at least ten observations per cohort and date 
+ qui: bys `arg_cohort_treatment_date'  : egen `sum_dates' = sum(`total_dates')   if `_sample' == 1 & (`arg_cohort_treatment_date' > 0) // check if condition validates across all dates 
+ qui: bys `arg_cohort_treatment_date' `arg_time'  : gen `nb_dates' = (_n==1) if `_sample' == 1 & (`arg_cohort_treatment_date' > 0) // count number of dates
+ qui: bys `arg_cohort_treatment_date'  : egen `sum_nb_dates' = sum(`nb_dates')   if `_sample' == 1 & (`arg_cohort_treatment_date' > 0) // check if condition validates across all dates 
+ qui : replace `_sample' = 0  if (`sum_dates'< `sum_nb_dates')  & `_sample'==1 & (`arg_cohort_treatment_date' > 0) // keep only valid cohorts 
 /*   BEGIN ESTIMATION      */
 tempvar beta_hat
 cap: gen `beta_hat' = .
@@ -44,14 +44,14 @@ qui: gen `Variable_G' = (`arg_cohort_treatment_date'  == (`t_group'))	if `_sampl
 qui: gen `Variable_T' = (`arg_time' == (`t_group' + `t_ell')) if `_sample'
     * check first-stage : record error if first-stage (t< X) is too weak or not enough variation for fixed effects
 cap:  reg  `d' `z' `Variable_G'  `Variable_T' `controls'  if ( (`arg_cohort_treatment_date'  == (`t_group')) | (`arg_cohort_treatment_date' == 0)) & (`arg_time' == (`t_group' + `t_ell')   | (`arg_time'== `t_group' - 1)) & `_sample'  
-cap: scalar Ferror_ivreg2 = (e(F) < `first') | (abs(e(b)[1,1])<1e-8)  | (abs(e(b)[1,2])<1e-8)  | (abs(e(b)[1,3])<1e-8) | (abs(e(b)[1,4])<1e-8) 
+cap: scalar Ferror_ivreg2 = (e(F) < `first') // | (abs(e(b)[1,1])<1e-8)  | (abs(e(b)[1,2])<1e-8)  | (abs(e(b)[1,3])<1e-8) | (abs(e(b)[1,4])<1e-8) 
 scalar Ferror_immediate = _rc 		
 cap: scalar Ferror_ivreg = (abs(e(b)[1,1]) == .) | (abs(e(b)[1,2])==.)  | (abs(e(b)[1,3])==.) | (abs(e(b)[1,4])==.)  
     * select estimation method (linear or ppml)					
 if "`exponential'" == "" {
 		* LINEAR MODEL (OLS/IV)
 cap:    ivreg2 `y' ( `d' = `z') `Variable_G'  `Variable_T' `controls'  if ( (`arg_cohort_treatment_date'  == (`t_group')) | (`arg_cohort_treatment_date' == 0)) & (`arg_time' == (`t_group' + `t_ell')   | (`arg_time'== `t_group' - 1)) & `_sample'  
-scalar error_immediate = _rc 		
+scalar error_immediate = _rc 
 						}
 					else {
 		* IV POISSON OPTION
@@ -63,7 +63,7 @@ cap:  ivreg2 `lnY' ( `d' = `z') `Variable_G'  `Variable_T' `controls'  if ( (`ar
      * extract treatment effect and potential errors in second stage 
 //  cap: scalar beta_iv_`cow'_`t_ell' = _b[`d']  
  cap: replace `beta_hat' = _b[`d'] if ( (`arg_cohort_treatment_date'  == (`t_group')) ) & (`arg_time' == (`t_group' + `t_ell')) & `_sample'
- cap: scalar error_ivreg2 = (abs(e(b)[1,1]) < 1e-8) | (abs(e(b)[1,2])<1e-8)  | (abs(e(b)[1,3])<1e-8) | (abs(e(b)[1,4])<1e-8) 
+//  cap: scalar error_ivreg2 = (abs(e(b)[1,1]) < 1e-40) | (abs(e(b)[1,2])<1e-40)  | (abs(e(b)[1,3])<1e-40) | (abs(e(b)[1,4])<1e-40) 
  cap: scalar error_ivreg = (abs(e(b)[1,1]) == .) | (abs(e(b)[1,2])==.)  | (abs(e(b)[1,3])==.) | (abs(e(b)[1,4])==.)  
 	 * remove corrupted estimates and associated sample 
  if error_ivreg2 == 1 | error_ivreg == 1 | error_immediate>0 |  Ferror_ivreg2 == 1 | Ferror_ivreg == 1 | Ferror_immediate>0 {  
