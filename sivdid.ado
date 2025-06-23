@@ -28,8 +28,6 @@ local nb_cohorts `r(r)'
 foreach t_group in `cohort_groups' {
 local cow = `cow' + 1
 		forvalues t_ell = 0(1)`periods' {
-	* create an empty treatment effect scalar 
-// scalar beta_iv_`cow'_`t_ell' = .
 	* scalars to record potential identification failure 
 scalar error_ivreg2 = 0
 scalar error_ivreg = 0
@@ -69,7 +67,6 @@ cap:  ivreg2 `lnY' ( `d' = `z') `Variable_G'  `Variable_T' `controls'  if ( (`ar
  if error_ivreg2 == 1 | error_ivreg == 1 | error_immediate>0 |  Ferror_ivreg2 == 1 | Ferror_ivreg == 1 | Ferror_immediate>0 {  
 //  	di "Could not estimate the folowing group-time treament effect:"
 //  	di "Group-Time: " `cow' "-" `t_ell'
-// 	scalar beta_iv_`cow'_`t_ell' = 0
     cap: replace `beta_hat' = . if ( (`arg_cohort_treatment_date'  == (`t_group')) ) & (`arg_time' == (`t_group' + `t_ell')) & `_sample'
 	qui: replace `_sample' = 0 if (`arg_cohort_treatment_date' == `t_group') & (`arg_time' == (`t_group' + `t_ell')) & `_sample'==1
 			}
@@ -125,6 +122,7 @@ qui: sum `beta_hat' if `_sample' & (`arg_cohort_treatment_date' != 0) , de
 	if "`median'" == "median"{
 	di "Overall Median Treatment Effect : " r(p50)
 	ereturn scalar beta_overall_median = r(p50)
+	di "Overall Mean Treatment Effect : " r(mean // provide even if median option
 			}
 	else {
 	di "Overall Mean Treatment Effect : " r(mean)
