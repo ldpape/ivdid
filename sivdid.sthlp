@@ -42,7 +42,7 @@
 {synoptset 22 tabbed}{...}
 {synopthdr}
 {synoptline}
-{synopt:{opt permanent}{cmd:(}{help sivdid##permanent:permanent}{cmd:)}} Drop cohort which are not present the full time horizon (defined by periods). {p_end}
+{synopt:{opt permanent}{cmd:(}{help sivdid##permanent:permanent}{cmd:)}} Drop cohort which are not present the full time horizon (defined by periods). I recommend always keeping this option on in case there are many incomplete cohorts. This avoids having an average effect composed of too many period 0 effects. {p_end}
 
 {synopt:{opt keep}{cmd:(}{help sivdid##keep:keep}{cmd:)}} Drop cohort who don't have at least this number of observations at each moment in time. Default set at 0. Requires the permanent option. {p_end}
 
