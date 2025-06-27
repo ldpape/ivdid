@@ -5,7 +5,7 @@ syntax [if] [in] [,   Y(string) D(string) Z(string) first(real 0)  median  perio
 marksample _sample
 // 	set buildfvinfo on
 tempvar copy 
-qui : gen `copy' = `_sample' // used for jackknife to identify initial sample
+// qui : gen `copy' = `_sample' // used for jackknife to identify initial sample
 * drop missing obs 
 foreach x of varlist `y' `d' `z' `arg_cohort_treatment_date' `arg_time' {
 qui: replace `_sample' = 0 if missing(`x')
@@ -114,7 +114,7 @@ qui: gen phi_`cow'_`t_ell' = (((`arg_cohort_treatment_date'  == (`t_group')) | (
 qui: gen phi_sqr_`cow'_`t_ell' = (phi_`cow'_`t_ell')^2  if `_sample'
 qui: sum phi_sqr_`cow'_`t_ell' if  `_sample'
 qui: gen se_`cow'_`t_ell' = sqrt(r(mean)/r(N))
-// sum se_`cow'_`t_ell'
+//  sum se_`cow'_`t_ell'
 // sum `beta_hat' if `_sample' &  (`arg_time' == (`t_group'+ `t_ell')) & ( (`arg_cohort_treatment_date'  == (`t_group')))
 }									
 	}
@@ -167,11 +167,11 @@ qui: gen se_theta_final = sqrt(r(mean)/r(N))
 ereturn clear 
 qui: sum `_sample' if `_sample'
 scalar obs_actual = r(N)
-qui: sum `copy' if `copy'
-scalar N = r(N)
-cap : drop sample 
-cap : gen sample = `_sample' // actual sample used, made available directly
-ereturn post, esample(`copy') obs(`=N') depname(`y')
+qui: gen `copy' = `_sample'
+// scalar N = r(N)
+// cap : drop sample 
+// cap : gen sample = `_sample' // actual sample used, made available directly
+ereturn post, esample(`copy') obs(`=obs_actual') depname(`y')
 ** report in console 
 di  "----------------------------------------------------"
 di  "                   LATE SUMMARY                     "
