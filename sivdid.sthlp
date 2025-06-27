@@ -89,7 +89,7 @@ Sho Miyaji, Instrumented Difference-in-Differences with Heterogeneous Treatment 
 {title:Examples (Oreopolous Data)}
 
 Load Oreopolous (UK) data :
-{phang2}{cmd: use "C:\Users\ldpap\Downloads\oreopolous\data.dta", replace}{p_end}
+{phang2}{cmd: use "https://raw.githubusercontent.com/ldpape/ivdid/master/oreopoulos_sample.dta", replace}{p_end}
 
 Generate the cohort treatment date variable by identifying first time period of treatment.
 Here, there is only one cohort:
