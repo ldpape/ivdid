@@ -105,7 +105,7 @@ Example of package usage :
 {phang2}{cmd:   sivdid, y(learn) d(agelfted) z(drop15) cohort_treatment_date(cohort_treatment_date) time(yearat14)  periods(9)   }{p_end}
 {phang2}{cmd:   sivdid, y(learn) d(agelfted) z(drop15) cohort_treatment_date(cohort_treatment_date) time(yearat14)  periods(9) permament keep(2)   }{p_end}
 {phang2}{cmd:   sivdid, y(learn) d(agelfted) z(drop15) cohort_treatment_date(cohort_treatment_date) time(yearat14)  periods(9) permament keep(2)  event_study  }{p_end}
-{phang2}{cmd:   sivdid if learn>0 , y(learn) d(agelfted) z(drop15) cohort_treatment_date(cohort_treatment_date) time(yearat14)  periods(9) permament keep(2)  event_study graph_options(xtitle("New x-axis title")  }{p_end}
+{phang2}{cmd:   sivdid if learn>0 , y(learn) d(agelfted) z(drop15) cohort_treatment_date(cohort_treatment_date) time(yearat14)  periods(9) permament keep(2)  event_study graph_options(xtitle("New x-axis title"))  }{p_end}
 
 {marker results}{...}
 {title:Stored Results}
