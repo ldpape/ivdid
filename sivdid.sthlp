@@ -68,11 +68,11 @@
 {pstd}
 
 This package was developed for the following research: 
-C. Helmers, B. Love and L-D Pape, Judge (Ideology) Shopping, {browse "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=5143777" Santa Clara Univ. Legal Studies Research Paper No. 5143777}
+C. Helmers, B. Love and L-D Pape, Judge (Ideology) Shopping, {browse "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=5143777": Santa Clara Univ. Legal Studies Research Paper No. 5143777}
 
 This package is based on the following article: 
 Sho Miyaji, Instrumented Difference-in-Differences with Heterogeneous Treatment Effects (2025). 
-{browse "https://arxiv.org/abs/2405.12083":arXiv, 2405.12083}. {p_end}
+{browse "https://arxiv.org/abs/2405.12083":arXiv, 2405.12083}. 
 
 {pstd}BibTeX:{p_end}
 @misc{miyaji2025,
@@ -88,15 +88,24 @@ Sho Miyaji, Instrumented Difference-in-Differences with Heterogeneous Treatment 
 {marker examples}{...}
 {title:Examples (Oreopolous Data)}
 
+Load Oreopolous (UK) data :
 {phang2}{cmd: use "C:\Users\ldpap\Downloads\oreopolous\data.dta", replace}{p_end}
+
+Generate the cohort treatment date variable by identifying first time period of treatment.
+Here, there is only one cohort:
+
 {phang2}{cmd: gen tempvar = yearat14*drop15 }{p_end}
 {phang2}{cmd: replace tempvar = . if tempvar == 0 }{p_end}
 {phang2}{cmd: egen cohort_treatment_date = min(tempvar) }{p_end}
+
+Identify never treated group:
 {phang2}{cmd:  replace cohort_treatment_date = 0 if nireland }{p_end}
+
+Example of package usage :
 {phang2}{cmd:   sivdid, y(learn) d(agelfted) z(drop15) cohort_treatment_date(cohort_treatment_date) time(yearat14)  periods(9)   }{p_end}
 {phang2}{cmd:   sivdid, y(learn) d(agelfted) z(drop15) cohort_treatment_date(cohort_treatment_date) time(yearat14)  periods(9) permament keep(2)   }{p_end}
 {phang2}{cmd:   sivdid, y(learn) d(agelfted) z(drop15) cohort_treatment_date(cohort_treatment_date) time(yearat14)  periods(9) permament keep(2)  event_study  }{p_end}
-
+{phang2}{cmd:   sivdid if learn>0 , y(learn) d(agelfted) z(drop15) cohort_treatment_date(cohort_treatment_date) time(yearat14)  periods(9) permament keep(2)  event_study  }{p_end}
 
 {marker results}{...}
 {title:Stored Results}
@@ -114,8 +123,8 @@ Sho Miyaji, Instrumented Difference-in-Differences with Heterogeneous Treatment 
 {synopt:{cmd:e(first)}} F-test restriction (seldom used) {p_end}
 {synopt:{cmd:e(keep)}} Indicated permanent cohort restriction {p_end}
 
-{marker authors}{...}
-{title:Authors}
+{marker author}{...}
+{title:Author}
 
 {pstd} Louis Pape {break}
 Télécom Paris (CREST - IP Paris) {break}
