@@ -262,6 +262,6 @@ di "Number of Observations: " obs_actual
 if "`event_study'" != ""{
 cap : gen `lower_ci' = `print_beta_hat' - 1.96*`print_se_hat'
 cap : gen `upper_ci' = `print_beta_hat' + 1.96*`print_se_hat'
-tw (scatter `print_beta_hat' `ell', mcolor(eltblue) msize(2.5) yline(`coef', lpattern(dash) lwidth(0.35) lcolor(blue)) xlabel(,grid glcolor(gray) glpattern(dash) glwidth(.1))  ylabel( , grid glcolor(gray) glpattern(dash) glwidth(.1))  ) (rcap `upper_ci' `lower_ci' `ell' , lcolor(lavender) lwidth(0.25) lpattern(solid)) , graphregion(color(white)) plotregion(color(white)) bgcolor(white)  xtitle("Periods Since Treatment")  ytitle("Estimated per Period Avg. LATE")  legend(off) yline(0, lpattern(solid) lwidth(0.35) lcolor(red)) `graph_options' 
+tw (scatter `print_beta_hat' `ell', mcolor(eltblue) msize(2.5) yline(`coef', lpattern(dash) lwidth(0.35) lcolor(blue)) xlabel(,grid glcolor(gray) glpattern(dash) glwidth(.1))  ylabel( , grid glcolor(gray) glpattern(dash) glwidth(.1))  ) (rcap `upper_ci' `lower_ci' `ell' , lcolor(eltblue) lwidth(0.25) lpattern(solid)) , graphregion(color(white)) plotregion(color(white)) bgcolor(white)  xtitle("Periods Since Treatment")  ytitle("Estimated per Period Avg. LATE")  legend(off) yline(0, lpattern(solid) lwidth(0.35) lcolor(red)) `graph_options' 
 						}
 end
