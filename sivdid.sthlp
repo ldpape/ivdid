@@ -21,7 +21,7 @@
 {marker syntax}{...}
 {title:Syntax}
 
-{p 8 15 2} {cmd:sivdid}  {ifin}, {cmd:y(it: outcome variable)}   {cmd:d(it: endogenous variable)}  {cmd:z(it: instrumental variable)}  {cmd:cohort_treatment_date(it: cohort identifier)}  {cmd:time(it: time identifier)}  {cmd:periods(it: number of treatment periods)}   {cmd:keep(it: integer)}  {cmd:permanent}   {cmd:controls(it: control  variables)}  {cmd:event_study}  {cmd:graph_options(it: tw options)}  {cmd:exponential}  {cmd:first(it:real number)}   [{help sivdid##options:options}] {p_end}
+{p 8 15 2} {cmd:sivdid}  {ifin}, {cmd:y(outcome variable)}   {cmd:d(endogenous variable)}  {cmd:z(instrumental variable)}  {cmd:cohort_treatment_date(cohort identifier)}  {cmd:time(time identifier)}  {cmd:periods(number of treatment periods)}   {cmd:keep(integer)}  {cmd:permanent}   {cmd:controls(control  variables)}  {cmd:event_study}  {cmd:graph_options(tw options)}  {cmd:exponential}  {cmd:first(it:real number)}   [{help sivdid##options:options}] {p_end}
 
 
 
