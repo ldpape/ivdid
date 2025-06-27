@@ -46,7 +46,7 @@
 {synopt:{opt keep}{cmd:(}{help sivdid##keep:keep}{cmd:)}} Drop cohort who don't have at least this number of observations at each moment in time. Default set at 0. Requires the permanent option. {p_end}
 {synopt:{opt controls}{cmd:(}{help sivdid##controls:controls}{cmd:)}} You can add a varlist of control variables. Note that the standard errors do not account for them. It may be a good idea to bootstrap your standard errors in this case. {p_end}
 {synopt:{opt event_study}{cmd:(}{help sivdid##event_study:event_study}{cmd:)}} Create the event-study graph for the per period average LATE. The blue horizontal line is the estimated total average. The graph includes 95% confidence intervals. {p_end}
-{synopt:{opt graph_options}{cmd:(}{help sivdid##graph_options:graph_options}{cmd:)}} You can write here options that are then provided to "two way" graphs. {p_end}
+{synopt:{opt graph_options}{cmd:(}{help sivdid##graph_options:graph_options}{cmd:)}} You can write here options that are then provided to two way graphs. {p_end}
 {synopt:{opt exponential}{cmd:(}{help sivdid##exponential:exponential}{cmd:)}} Point estimates calculated based on using an endogenous count model. Standard errors are not provided and need to be bootstrapped. {p_end}
 {synopt:{opt first}{cmd:(}{help sivdid##exponential:exponential}{cmd:)}} Not commonly used but allows you to remove 2x2 DiD cases where the F-test is below the value you set here. Note that this creates selection bias which invalidates inference based on the provided standard errors. {p_end}
 
