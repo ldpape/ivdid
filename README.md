@@ -26,7 +26,7 @@ Example of package usage :
 
         sivdid, y(learn) d(agelfted) z(drop15) cohort_treatment_date(cohort_treatment_date) time(yearat14) periods(9) permanent keep(2)
 
-Generate the event study plot and use with "if" option :
+Generate the event study plot and use with "if" option (blue line is the estimated weighted average) :
 
         sivdid if learn>0 , y(learn) d(agelfted) z(drop15) cohort_treatment_date(cohort_treatment_date) time(yearat14) periods(9) permanent keep(2) event_study
         
