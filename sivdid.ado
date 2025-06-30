@@ -229,9 +229,10 @@ qui: sum  `se_theta_`t_ell''
 matrix VV[`t_ell'+1, `t_ell'+1] = r(mean)^2
 }
 * Fill with avg. effect (theta)
-qui: sum `beta_hat' if `_sample' & (`cohort_treatment_date' != 0) & (`time' >= (`cohort_treatment_date')) 
+qui: sum `beta_hat' if `_sample' & (`cohort_treatment_date' != 0) & (`time' >= (`cohort_treatment_date')) , de
 matrix BB[Ncoef, 1] = r(mean)
 local coef = r(mean)
+scalar beta_error = beta_error + (r(max)>(10*r(p50)))
 qui: sum `se_theta_final'
 matrix VV[Ncoef, Ncoef] = r(mean)^2
 if "`exponential'" != ""  { // not calculated for exponential model
@@ -268,7 +269,7 @@ ereturn post BB ,  esample(`_sample') obs(`=obs_actual') depname(`y')
 }
 ereturn display 
 	* Rest of scalars 
-ereturn scalar error = beta_error
+ereturn scalar error = beta_error>0
 ereturn scalar keep = `keep'
 ereturn scalar first = `first'
 ereturn scalar periods = `periods'
