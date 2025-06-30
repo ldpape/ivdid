@@ -24,11 +24,11 @@ Identify never treated group:
 
 Example of package usage :
 
-        sivdid, y(learn) d(agelfted) z(drop15) cohort_treatment_date(cohort_treatment_date) time(yearat14) periods(9) permament keep(2)
+        sivdid, y(learn) d(agelfted) z(drop15) cohort_treatment_date(cohort_treatment_date) time(yearat14) periods(9) permanent keep(2)
 
 Generate the event study plot and use with "if" option :
 
-        sivdid if learn>0 , y(learn) d(agelfted) z(drop15) cohort_treatment_date(cohort_treatment_date) time(yearat14) periods(9) permament keep(2) event_study
+        sivdid if learn>0 , y(learn) d(agelfted) z(drop15) cohort_treatment_date(cohort_treatment_date) time(yearat14) periods(9) permanent keep(2) event_study
         
    ![oreo_graph](https://github.com/user-attachments/assets/3069fdd6-dd49-44d9-ae01-5024f62894f3)
 
@@ -45,3 +45,25 @@ Use with endogenous count model of Mullahy (1996) :
         sivdid, y(earn) d(agelfted) z(drop15) cohort_treatment_date(cohort_treatment_date) time(yearat14) periods(9) permanent keep(2)  exponential event_study
             graph_options(xtitle("New x-axis title")
         eststo: bootstrap _b ,  level(95)   seed(1234) reps(10)  : sivdid, y(earn) d(agelfted) z(drop15) cohort_treatment_date(cohort_treatment_date) time(yearat14)  periods(9) exponential
+
+### Citations
+Please cite the original contribution by Sho Miyaji (2025) and applied paper for which this package was originally developped:
+
+@misc{miyaji2025instrumenteddifferenceindifferencesheterogeneoustreatment,
+      title={Instrumented Difference-in-Differences with Heterogeneous Treatment Effects}, 
+      author={Sho Miyaji},
+      year={2025},
+      eprint={2405.12083},
+      archivePrefix={arXiv},
+      primaryClass={econ.EM},
+      url={https://arxiv.org/abs/2405.12083}, 
+}
+
+@techreport{helmers2025judge,
+  author       = {Helmers, Christian and Love, Brian J. and Pape, Louis-Daniel},
+  title        = {Judge (Ideology) Shopping},
+  institution  = {Santa Clara Univ. Legal Studies Research Paper No. 5143777},
+  year         = {2025},
+  month        = {February},
+  note         = {Available at SSRN: \url{https://ssrn.com/abstract=5143777} or \url{http://dx.doi.org/10.2139/ssrn.5143777}},
+}
