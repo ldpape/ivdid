@@ -232,7 +232,6 @@ matrix VV[`t_ell'+1, `t_ell'+1] = r(mean)^2
 qui: sum `beta_hat' if `_sample' & (`cohort_treatment_date' != 0) & (`time' >= (`cohort_treatment_date')) , de
 matrix BB[Ncoef, 1] = r(mean)
 local coef = r(mean)
-scalar beta_error = beta_error + (r(max)>(5*r(p50)))
 qui: sum `se_theta_final'
 matrix VV[Ncoef, Ncoef] = r(mean)^2
 if "`exponential'" != ""  { // not calculated for exponential model
