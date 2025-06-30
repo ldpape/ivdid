@@ -65,5 +65,5 @@ Please cite the original contribution by Sho Miyaji (2025) and applied paper for
   institution  = {Santa Clara Univ. Legal Studies Research Paper No. 5143777},
   year         = {2025},
   month        = {February},
-  note         = {Available at SSRN: \url{https://ssrn.com/abstract=5143777} or \url{http://dx.doi.org/10.2139/ssrn.5143777}},
+  note         = {Available at SSRN: \url{https://ssrn.com/abstract=5143777}}
 }
