@@ -2,8 +2,9 @@
 Before using this package, please consult Miyaji (2025, working paper) at: https://arxiv.org/abs/2405.12083
 
 ### Installation of beta version (subject to changes, use at your own risk)
-cap ado uninstall sivdid
-net install sivdid, from("https://raw.githubusercontent.com/ldpape/ivdid/refs/heads/main/")
+
+        cap ado uninstall sivdid
+        net install sivdid, from("https://raw.githubusercontent.com/ldpape/ivdid/refs/heads/main/")
 
 ## Example (see help file)
 
