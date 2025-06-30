@@ -31,7 +31,7 @@ Generate the event study plot and use with "if" option :
    ![oreo_graph](https://github.com/user-attachments/assets/3069fdd6-dd49-44d9-ae01-5024f62894f3)
 
 
-Use with endogenous count model of Mulhally (1996) : 
+Use with endogenous count model of Mullahy (1996) : 
 
         gen earn = exp(learn)
         sivdid, y(earn) d(agelfted) z(drop15) cohort_treatment_date(cohort_treatment_date) time(yearat14) periods(9) permament keep(2) event_study exponential
