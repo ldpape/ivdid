@@ -1,5 +1,6 @@
 cap program drop sivdid
 program define sivdid, eclass 
+version 14
 syntax [if] [in] [,   Y(string) D(string) Z(string) first(real 0)  event_study  periods(real 0) cohort_treatment_date(string) time(string) exponential controls(varlist) keep(real 0) permanent graph_options(string) ]        
 /*         PREPARATION       */
 marksample _sample 
@@ -113,7 +114,7 @@ cap: scalar SS = _b[`d']
 		* IV POISSON OPTION
 cap:  ivreg2 `lnY' ( `d' = `z') `Variable_G'  `Variable_T' `controls'  if ( (`cohort_treatment_date'  == (`t_group')) | (`cohort_treatment_date' == 0)) & (`time' == (`t_group' + `t_ell')   | (`time'== `t_group' - 1)) & `_sample'
 // cap: noisily:  ivpoisson  gmm `y' `Variable_G' `Variable_T' `controls' (`d'= `z') if ( (`cohort_treatment_date'  == (`t_group')) | (`cohort_treatment_date' == 0)) & (`time' == (`t_group' + `t_ell')   | (`time'== `t_group' - 1)) & `_sample' , from(e(b))  multiplicative  technique(nr)  onestep  conv_maxiter(20) 
- cap: noisily:  ivpois `y' `Variable_G'  `Variable_T' `controls' if ( (`cohort_treatment_date'  == (`t_group')) | (`cohort_treatment_date' == 0)) & (`time' == (`t_group' + `t_ell')   | (`time'== `t_group' - 1)) & `_sample', endog(`d') exog(`z') from(e(b))
+ cap: ivpois `y' `Variable_G'  `Variable_T' `controls' if ( (`cohort_treatment_date'  == (`t_group')) | (`cohort_treatment_date' == 0)) & (`time' == (`t_group' + `t_ell')   | (`time'== `t_group' - 1)) & `_sample', endog(`d') exog(`z') from(e(b))
  scalar error_immediate = _rc 
 						 }		
      * extract treatment effect and potential errors in second stage 
@@ -215,89 +216,66 @@ qui: gen `se_theta_final' = sqrt(r(mean)/r(N))
 ereturn clear 
 qui: sum `_sample' if `_sample'
 scalar obs_actual = r(N)
-di  "----------------------------------------------------"
-di  "                   LATE SUMMARY                     "
-di  "----------------------------------------------------"
 scalar beta_error = 0
 scalar Ncoef = `periods'+2
-matrix B = J(Ncoef,1,0)
-matrix se = J(Ncoef,Ncoef,0)
+matrix BB = J(Ncoef,1,0)
+matrix VV = J(Ncoef,Ncoef,0)
 * Fill period effects 
 forvalues t_ell = 0(1)`periods' {
 qui: sum `beta_hat' if `_sample' & (`cohort_treatment_date' != 0) & (`time' == (`cohort_treatment_date' + `t_ell' )) 
 scalar beta_error = beta_error + r(N)==0
-matrix B[`t_ell'+1, 1] = r(mean)
+matrix BB[`t_ell'+1, 1] = r(mean)
 qui: sum  `se_theta_`t_ell'' 
-matrix se[`t_ell'+1, `t_ell'+1] = r(mean)^2
+matrix VV[`t_ell'+1, `t_ell'+1] = r(mean)^2
 }
 * Fill with avg. effect (theta)
 qui: sum `beta_hat' if `_sample' & (`cohort_treatment_date' != 0) & (`time' >= (`cohort_treatment_date')) 
-matrix B[Ncoef, 1] = r(mean)
+matrix BB[Ncoef, 1] = r(mean)
+local coef = r(mean)
 qui: sum `se_theta_final'
-matrix se[Ncoef, Ncoef] = r(mean)^2
+matrix VV[Ncoef, Ncoef] = r(mean)^2
 if "`exponential'" != ""  { // not calculated for exponential model
-matrix se = J(Ncoef,Ncoef,.)
+matrix VV = J(Ncoef,Ncoef,.)
 }
 * Prepare to export 
-tempvar print_beta_hat print_se_hat lower_ci upper_ci ell
-cap: gen `print_beta_hat' = .
-cap: gen `print_se_hat' = .
-cap: gen `ell' = .
-local names 
-di as text "----------------------------------------------------"
-di as text "     LATE     |   Coef.    Std. Err.     z     P>|z|"
-di as text "----------------------------------------------------"
-forvalues t_ell = 0(1)`periods' {
-        local coef = B[`t_ell'+1,1]
-        local ster = sqrt(se[`t_ell'+1, `t_ell'+1])
-        local ratio = `coef'/`ster'
-        local p = 2 * (1 - normal(abs(`ratio')))
-        local varname = "Period `t_ell'" 
-	    local names `names' Period:`t_ell'
-        di as res %10s "`varname'" ///
-           "   " %9.3f `coef' ///
-           "   " %9.3f `ster' ///
-           "   " %6.2f `ratio' ///
-           "   " %6.3f `p'
-cap: replace `print_beta_hat' = B[`t_ell'+1,1] if _n == (`t_ell'+1)
-cap: replace `print_se_hat' = sqrt(se[`t_ell'+1,`t_ell'+1]) if _n == (`t_ell'+1)
-cap: replace `ell' = (`t_ell') if _n == (`t_ell'+1)
-    }
-        local coef = B[Ncoef,1]
-        local ster = sqrt(se[Ncoef,Ncoef])
-        local ratio = `coef'/`ster'
-        local p = 2 * (1 - normal(abs(`ratio')))
-        local varname = "Average"
-	    local names `names' Average
-        di as res %10s "`varname'" ///
-           "   " %9.3f `coef' ///
-           "   " %9.3f `ster' ///
-           "   " %6.2f `ratio' ///
-           "   " %6.3f `p'
-    di as text "----------------------------------------------------"
-matrix rownames B = `names'
-matrix rownames se = `names'
-matrix colnames se = `names'
-matrix V = se
-matrix B = B'
-if "`exponential'" == ""{
-ereturn post B V ,  esample(`_sample') obs(`=obs_actual') depname(`y')
-}
-else {
-ereturn post B ,  esample(`_sample') obs(`=obs_actual') depname(`y')
-}
-ereturn scalar error = beta_error
-ereturn scalar keep = `keep'
-ereturn scalar first = `first'
-ereturn scalar periods = `periods'
 cap : drop _late_hat
 cap : gen _late_hat = `beta_hat'
 cap : drop _late_hat_se
 cap : gen _late_hat_se = `se_hat'
+tempvar print_beta_hat print_se_hat lower_ci upper_ci ell
+cap: gen `print_beta_hat' = .
+cap: gen `print_se_hat' = .
+cap: gen `ell' = .
+	* Write column names 
+local matrix_names 
+forvalues t_ell = 0(1)`periods' {
+local matrix_names `matrix_names' Period:`t_ell'
+cap: replace `print_beta_hat' = BB[`t_ell'+1,1] if _n == (`t_ell'+1)
+cap: replace `print_se_hat' = sqrt(VV[`t_ell'+1,`t_ell'+1]) if _n == (`t_ell'+1)
+cap: replace `ell' = (`t_ell') if _n == (`t_ell'+1)
+    }
+local matrix_names `matrix_names' Period:Average
+matrix BB = BB'
+matrix colnames BB = `matrix_names' 
+matrix colnames VV = `matrix_names' 
+matrix rownames VV = `matrix_names'
+	* Ereturn post to get display table 
+if "`exponential'" == ""{
+cap: ereturn post BB VV ,  esample(`_sample') obs(`=obs_actual') depname(`y')  
+}
+else {
+ereturn post BB ,  esample(`_sample') obs(`=obs_actual') depname(`y') 
+}
+ereturn display 
+	* Rest of scalars 
+ereturn scalar error = beta_error
+ereturn scalar keep = `keep'
+ereturn scalar first = `first'
+ereturn scalar periods = `periods'
 di "Number of Observations: " obs_actual
 if "`event_study'" != ""{
 cap : gen `lower_ci' = `print_beta_hat' - 1.96*`print_se_hat'
 cap : gen `upper_ci' = `print_beta_hat' + 1.96*`print_se_hat'
 tw (scatter `print_beta_hat' `ell', mcolor(eltblue) msize(2.5) yline(`coef', lpattern(dash) lwidth(0.35) lcolor(blue)) xlabel(,grid glcolor(gray) glpattern(dash) glwidth(.1))  ylabel( , grid glcolor(gray) glpattern(dash) glwidth(.1))  ) (rcap `upper_ci' `lower_ci' `ell' , lcolor(eltblue) lwidth(0.25) lpattern(solid)) , graphregion(color(white)) plotregion(color(white)) bgcolor(white)  xtitle("Periods Since Treatment")  ytitle("Estimated per Period Avg. LATE")  legend(off) yline(0, lpattern(solid) lwidth(0.35) lcolor(red)) `graph_options' 
-						}
+		 	}
 end
