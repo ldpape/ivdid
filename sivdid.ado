@@ -4,6 +4,9 @@ version 14
 syntax [if] [in] [,   Y(string) D(string) Z(string) first(real 0)  event_study  periods(real 0) cohort_treatment_date(string) time(string) exponential controls(varlist) keep(real 0) permanent graph_options(string) ]        
 /*         PREPARATION       */
 marksample _sample 
+* N for jackknife 
+qui: sum `_sample' if `_sample'
+scalar N_init = r(N)
 * drop missing obs 
 foreach x of varlist `y' `d' `z' `cohort_treatment_date' `time' {
 qui: replace `_sample' = 0 if missing(`x')
@@ -272,6 +275,7 @@ ereturn scalar error = beta_error>0
 ereturn scalar keep = `keep'
 ereturn scalar first = `first'
 ereturn scalar periods = `periods'
+ereturn scalar N_init = N_init
 di "Number of Observations: " obs_actual
 if "`event_study'" != ""{
 cap : gen `lower_ci' = `print_beta_hat' - 1.96*`print_se_hat'
