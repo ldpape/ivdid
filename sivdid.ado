@@ -122,8 +122,8 @@ cap: scalar SS = _b[`d']
 						}
 					else {
 		* IV POISSON OPTION
-cap:  ivreg2 `lnY' ( `d' = `z') `Variable_G'  `Variable_T' `controls'  if ( (`cohort_treatment_date'  == (`t_group')) | (`cohort_treatment_date' == 0)) & (`time' == (`t_group' + `t_ell')   | (`time'== `t_group' - 1)) & `_sample'
-cap: noisily:  ivpoisson  gmm `y' `Variable_G' `Variable_T' `controls' (`d'= `z') if ( (`cohort_treatment_date'  == (`t_group')) | (`cohort_treatment_date' == 0)) & (`time' == (`t_group' + `t_ell')   | (`time'== `t_group' - 1)) & `_sample' , from(e(b))  multiplicative   conv_maxiter(25) 
+cap: ivreg2 `lnY' ( `d' = `z') `Variable_G'  `Variable_T' `controls'  if ( (`cohort_treatment_date'  == (`t_group')) | (`cohort_treatment_date' == 0)) & (`time' == (`t_group' + `t_ell')   | (`time'== `t_group' - 1)) & `_sample'
+cap: ivpoisson  gmm `y' `Variable_G' `Variable_T' `controls' (`d'= `z') if ( (`cohort_treatment_date'  == (`t_group')) | (`cohort_treatment_date' == 0)) & (`time' == (`t_group' + `t_ell')   | (`time'== `t_group' - 1)) & `_sample' , from(e(b))  multiplicative   conv_maxiter(25) 
 // cap: ivpois `y' `Variable_G'  `Variable_T' `controls' if ( (`cohort_treatment_date'  == (`t_group')) | (`cohort_treatment_date' == 0)) & (`time' == (`t_group' + `t_ell')   | (`time'== `t_group' - 1)) & `_sample', endog(`d') exog(`z') from(e(b))
  scalar error_immediate = _rc 
 						 }		
