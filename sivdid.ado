@@ -61,18 +61,25 @@ if "`permanent'" != ""{
 	* check if there are at least `keep' amount of observations per cohort at each relevant moments in time
 	* then, check if this condition is valided across moments in time
 	* drop a cohort which is not available for the whole length of time
-tempvar total_dates  sum_dates nb_dates sum_nb_dates
+tempvar total_dates  sum_dates nb_dates
  qui: bys  `_sample' `cohort_treatment_date' `time'  : gen `total_dates' = (_n==`keep') if `_sample' == 1
  qui: bys  `_sample' `cohort_treatment_date'         : egen `sum_dates' = sum(`total_dates')   if `_sample' == 1 
- qui: bys  `_sample' `cohort_treatment_date' `time'  : gen `nb_dates' = (_n==1) if `_sample' == 1 
- qui: bys  `_sample' `cohort_treatment_date'         : egen `sum_nb_dates' = sum(`nb_dates')   if `_sample' == 1 
- qui : replace `_sample' = 0  if (`sum_dates'< `sum_nb_dates')  & `_sample'==1 
-}
-	* gen variable for exponential 
+ qui : replace `_sample' = 0  if (`sum_dates'< (`periods'+1))  & `_sample'==1 
+
 	if "`exponential'"!=""{
+	* check enough variation : each cohort in sample should have non zero mean y for identification
+tempvar mean_y sum_mean nb_dates 
+ qui: bys  `_sample' `cohort_treatment_date'  `time'   : egen `mean_y' = mean(`y')   if `_sample' == 1 
+ qui: bys  `_sample' `cohort_treatment_date'           : egen `sum_mean' = sum(`mean_y'>0)   if `_sample' == 1 
+ qui : replace `_sample' = 0  if (`sum_mean'< (`periods'+1))  & `_sample'==1
+	}
+}
+
+if "`exponential'"!=""{
+	* gen variable 
 tempvar lnY
 qui: gen `lnY' = asinh(`y') if `_sample' 
-	}
+}
 /*   BEGIN ESTIMATION      */
 tempvar beta_hat se_hat
 cap: gen `se_hat' = .
