@@ -30,11 +30,11 @@ if "`controls'"!=""{
 }
 * reminder for exponential 
 if "`exponential'"!=""{
-qui cap which ivpois
+qui cap which ivpoisson
 if _rc{
 	di ""
-	di as error "Exponential mode uses the endogenous count model of Mullahy (1996): this requires the package 'ivpois' to be installed. You have not installed the ivpois package."
-	di `"{stata "ssc install ivpois": Click here to install ivpois}"'
+	di as error "Exponential mode uses the endogenous count model of Mullahy (1996): this requires the package 'ivpoisson' to be installed. You have not installed the ivpois package."
+	di `"{stata "ssc install ivpoisson": Click here to install ivpoisson}"'
 	di as input _continue ""
 	exit
 	}
@@ -122,8 +122,8 @@ cap: scalar SS = _b[`d']
 						}
 					else {
 		* IV POISSON OPTION
-cap: ivreg2 `lnY' ( `d' = `z') `Variable_G'  `Variable_T' `controls'  if ( (`cohort_treatment_date'  == (`t_group')) | (`cohort_treatment_date' == 0)) & (`time' == (`t_group' + `t_ell')   | (`time'== `t_group' - 1)) & `_sample'
-cap: ivpoisson  gmm `y' `Variable_G' `Variable_T' `controls' (`d'= `z') if ( (`cohort_treatment_date'  == (`t_group')) | (`cohort_treatment_date' == 0)) & (`time' == (`t_group' + `t_ell')   | (`time'== `t_group' - 1)) & `_sample' , from(e(b))  multiplicative   conv_maxiter(25) 
+cap:  ivreg2 `lnY' ( `d' = `z') `Variable_G'  `Variable_T' `controls'  if ( (`cohort_treatment_date'  == (`t_group')) | (`cohort_treatment_date' == 0)) & (`time' == (`t_group' + `t_ell')   | (`time'== `t_group' - 1)) & `_sample'
+cap: ivpoisson  gmm `y' `Variable_G' `Variable_T' `controls' (`d'= `z') if ( (`cohort_treatment_date'  == (`t_group')) | (`cohort_treatment_date' == 0)) & (`time' == (`t_group' + `t_ell')   | (`time'== `t_group' - 1)) & `_sample' , from(e(b))  multiplicative  conv_maxiter(50) technique(nr) onestep 
 // cap: ivpois `y' `Variable_G'  `Variable_T' `controls' if ( (`cohort_treatment_date'  == (`t_group')) | (`cohort_treatment_date' == 0)) & (`time' == (`t_group' + `t_ell')   | (`time'== `t_group' - 1)) & `_sample', endog(`d') exog(`z') from(e(b))
  scalar error_immediate = _rc 
 						 }		
